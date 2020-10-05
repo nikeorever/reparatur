@@ -6,7 +6,8 @@ Caused by: android.content.res.Resources$NotFoundException: String resource ID #
 ```
 
 **Support Incremental Builds**
-wnload
+
+Download
 --------
 
 #### Error: 
