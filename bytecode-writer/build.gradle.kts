@@ -3,10 +3,6 @@ plugins {
     id("org.jetbrains.dokka")
 }
 
-repositories {
-    mavenCentral()
-}
-
 dependencies {
     implementation(Dependencies.asm)
 }
