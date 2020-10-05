@@ -3,12 +3,10 @@ package cn.nikeo.reparatur.gradle
 import cn.nikeo.reparatur.bytecodewriter.write
 import cn.nikeo.transformer.jar.isClassFile
 import cn.nikeo.transformer.jar.transformJar
-import cn.nikeo.transformer.jar.transformJarDsl
 import com.android.SdkConstants
 import com.android.build.api.transform.*
 import com.android.build.gradle.internal.pipeline.TransformManager
 import java.io.File
-import java.io.FileOutputStream
 
 class ReparaturTransform(private val crashWebViewsExtension: CrashWebViewsExtension) : Transform() {
     override fun getName(): String = "ReparaturTransform"
@@ -35,13 +33,6 @@ class ReparaturTransform(private val crashWebViewsExtension: CrashWebViewsExtens
                 if (invocation.isIncremental) {
                     when (jarInput.status) {
                         Status.ADDED, Status.CHANGED -> {
-                            println(
-                                """
-                                [JarInputs]
-                                jarInput: ${jarInput.file}
-                                jarOutput: $jarOutput
-                            """.trimIndent()
-                            )
                             transformJarContents(jarInput.file, jarOutput)
                         }
                         Status.REMOVED -> {
@@ -55,13 +46,6 @@ class ReparaturTransform(private val crashWebViewsExtension: CrashWebViewsExtens
                         }
                     }
                 } else {
-                    println(
-                        """
-                        [JarInputs]
-                        jarInput: ${jarInput.file}
-                        jarOutput: $jarOutput
-                            """.trimIndent()
-                    )
                     transformJarContents(jarInput.file, jarOutput)
                 }
             }
@@ -78,7 +62,7 @@ class ReparaturTransform(private val crashWebViewsExtension: CrashWebViewsExtens
                         val outputFile = toOutputFile(outputDir, directoryInput.file, file)
                         when (status) {
                             Status.ADDED, Status.CHANGED ->
-                                transformFile(file, outputFile, outputDir)
+                                transformFile(file, outputFile)
                             Status.REMOVED -> outputFile.delete()
                             Status.NOTCHANGED -> {
                                 // No need to transform.
@@ -91,7 +75,7 @@ class ReparaturTransform(private val crashWebViewsExtension: CrashWebViewsExtens
                 } else {
                     directoryInput.file.walkTopDown().forEach { file ->
                         val outputFile = toOutputFile(outputDir, directoryInput.file, file)
-                        transformFile(file, outputFile.parentFile, outputDir)
+                        transformFile(file, outputFile.parentFile)
                     }
                 }
             }
@@ -109,11 +93,9 @@ class ReparaturTransform(private val crashWebViewsExtension: CrashWebViewsExtens
         File(outputDir, inputFile.relativeTo(inputDir).path)
 
     private fun transformJarContents(jarInput: File, jarOutput: File) {
-        // TODO
         transformJar(jarInput = jarInput, jarOutput = jarOutput) { inputJarEntry, outputJarEntryInputStream ->
             when {
                 inputJarEntry.isClassFile() -> {
-                    // TODO
                     val entryName = inputJarEntry.name
                     val contained = crashWebViewsExtension.qualifiedNames.orNull?.map { qualifiedName ->
                         qualifiedName.replace(
@@ -124,6 +106,7 @@ class ReparaturTransform(private val crashWebViewsExtension: CrashWebViewsExtens
                         entryName == qualifiedNamePath + SdkConstants.DOT_CLASS
                     } == true
                     if (contained) {
+                        println("Repairing WebView: $entryName")
                         write(outputJarEntryInputStream, entryName.removeSuffix(SdkConstants.DOT_CLASS))
                     } else {
                         outputJarEntryInputStream.readBytes()
@@ -134,18 +117,8 @@ class ReparaturTransform(private val crashWebViewsExtension: CrashWebViewsExtens
         }
     }
 
-    private fun transformFile(inputFile: File, outputFileParent: File, outputDir: File) {
-        println(
-            """
-                [DirectoryInputs]
-                inputFile: $inputFile 
-                outputFileParent: $outputFileParent
-                outputDir: $outputDir
-                """.trimIndent()
-        )
-
+    private fun transformFile(inputFile: File, outputFileParent: File) {
         if (inputFile.isClassFile()) {
-            // TODO
             var className = ""
             val contained = crashWebViewsExtension.qualifiedNames.orNull?.map { qualifiedName ->
                 qualifiedName.replace(
@@ -158,9 +131,9 @@ class ReparaturTransform(private val crashWebViewsExtension: CrashWebViewsExtens
             } == true
 
             if (contained) {
-                val bytes = write(inputFile.inputStream(), className)
+                println("Repairing WebView: ${className + SdkConstants.DOT_CLASS}")
                 outputFileParent.mkdirs()
-                File(outputFileParent, inputFile.name).writeBytes(bytes)
+                File(outputFileParent, inputFile.name).writeBytes(write(inputFile.inputStream(), className))
             } else {
                 outputFileParent.mkdirs()
                 inputFile.copyTo(target = File(outputFileParent, inputFile.name), overwrite = true)
