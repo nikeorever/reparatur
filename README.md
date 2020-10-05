@@ -6,9 +6,11 @@ Caused by: android.content.res.Resources$NotFoundException: String resource ID #
 ```
 
 **Support Incremental Builds**
-
-Download
+wnload
 --------
+
+#### Error: 
+Due to the configuration problem of the gradle plugin, please **do not** use version **1.0.0**.
 
 #### Top-level build file
 ```groovy
@@ -18,7 +20,7 @@ buildscript {
     }
 
     dependencies {
-        classpath "cn.nikeo.reparatur:gradle-plugin:1.0.0"
+        classpath "cn.nikeo.reparatur:gradle-plugin:1.1.0"
     }
 }
 ```
