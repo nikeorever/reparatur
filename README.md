@@ -1,5 +1,8 @@
 reparatur
 ===========
+
+[![Maven Central](https://maven-badges.herokuapp.com/maven-central/cn.nikeo.reparatur/gradle-plugin/badge.svg)](https://maven-badges.herokuapp.com/maven-central/cn.nikeo.reparatur/gradle-plugin)
+
 A plugin that helps you fix the crash of webview in Android Lollipop(API 22).
 ```
 Caused by: android.content.res.Resources$NotFoundException: String resource ID #0x2040003
